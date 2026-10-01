@@ -1,0 +1,23 @@
+# 环境变量
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 生成物与工作目录
+output/
+assets/fixtures/*.csv
+assets/fixtures/*.txt
+assets/fixtures/*.json
+assets/fixtures/*.zip
+assets/fixtures/*.xlsx
+
+# IDE / 系统
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+.DS_Store

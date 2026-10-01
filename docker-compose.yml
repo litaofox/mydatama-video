@@ -1,0 +1,22 @@
+# 独立 compose 工程：与 mydatama 的 compose 工程、网络、数据卷完全无关
+# 用法：
+#   docker compose --profile video run --rm builder                 # 全自动出片
+#   docker compose --profile video run --rm builder --slides-only   # 只渲染幻灯片
+name: mydatama-video
+
+services:
+  builder:
+    image: mydatama-video:0.1.0
+    build: .
+    profiles: ["video"]
+    environment:
+      BASE_URL: ${BASE_URL:-http://host.docker.internal:8090}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123}
+      TTS_VOICE: ${TTS_VOICE:-zh-CN-YunxiNeural}
+      TTS_RATE: ${TTS_RATE:--5%}
+      HEADLESS: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./output:/app/output

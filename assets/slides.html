@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mydatama V0.1 讲解视频幻灯片</title>
+<link rel="stylesheet" href="./vendor/atom-one-dark.min.css" />
+<script src="./vendor/highlight.min.js"></script>
+<style>
+  :root{
+    --primary:#1f5fbf; --primary2:#2f7df6; --dark:#122036; --ink:#1f2733;
+    --muted:#5b6b80; --line:#dbe3ef; --bg:#eef2f8; --card:#fff;
+    --green:#1a9e5c; --red:#d83931; --amber:#d9820b; --code-bg:#222a35;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;}
+  .slide{display:none;height:100vh;padding:56px 84px 72px;position:relative;
+    flex-direction:column;justify-content:center;background:var(--bg);}
+  .slide.active{display:flex;animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  .tag{position:absolute;top:28px;left:84px;font-size:15px;color:var(--muted);letter-spacing:1px;}
+  .tag b{color:var(--primary);}
+  .pageno{position:absolute;bottom:26px;right:48px;font-size:14px;color:#93a1b5;}
+  .brand{position:absolute;bottom:26px;left:84px;font-size:14px;color:#93a1b5;letter-spacing:1px;}
+  h1{font-size:58px;line-height:1.25;margin-bottom:18px;}
+  h2{font-size:40px;margin-bottom:34px;color:var(--dark);}
+  h2 .num{color:var(--primary);margin-right:14px;}
+  .lead{font-size:24px;color:var(--muted);line-height:1.8;}
+  .chips{display:flex;gap:14px;flex-wrap:wrap;margin-top:36px;}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:10px 22px;font-size:19px;color:var(--dark);
+    box-shadow:0 2px 6px rgba(31,95,191,.06);}
+  .grid{display:grid;gap:22px;}
+  .g2{grid-template-columns:1fr 1fr;}.g3{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(4,1fr);}.g6{grid-template-columns:repeat(6,1fr);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 28px;
+    box-shadow:0 6px 18px rgba(18,32,54,.06);}
+  .card h3{font-size:23px;margin-bottom:10px;color:var(--dark);}
+  .card p{font-size:18px;color:var(--muted);line-height:1.7;}
+  .card .big{font-size:40px;font-weight:700;color:var(--primary);margin:6px 0 2px;}
+  .pill{display:inline-block;font-size:15px;border-radius:6px;padding:2px 10px;margin-right:8px;color:#fff;}
+  .p-blue{background:var(--primary);}.p-green{background:var(--green);}.p-red{background:var(--red);}.p-amber{background:var(--amber);}.p-gray{background:#6b778c;}
+  /* 架构图 */
+ .arch{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:10px;flex-wrap:wrap;}
+  .box{background:#fff;border:2px solid var(--primary);border-radius:14px;padding:18px 22px;text-align:center;min-width:150px;}
+  .box .t{font-size:20px;font-weight:700;color:var(--dark);}
+  .box .s{font-size:15px;color:var(--muted);margin-top:4px;}
+  .box.fill{background:var(--primary);border-color:var(--primary);}
+  .box.fill .t,.box.fill .s{color:#fff;}
+  .box.gray{border-color:#9aa9bd;}
+  .arrow{font-size:30px;color:var(--primary);font-weight:700;}
+  .arrow.down{transform:rotate(90deg);}
+  .layers{display:flex;flex-direction:column;gap:14px;}
+  .layer{border-radius:12px;padding:16px 24px;font-size:19px;display:flex;gap:18px;align-items:center;
+    background:#fff;border:1px solid var(--line);}
+  .layer b{color:var(--primary);min-width:230px;display:inline-block;}
+  .layer span{color:var(--muted);font-size:17px;}
+  .flow{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;}
+  .step{background:#fff;border:1.5px solid var(--primary2);border-radius:12px;padding:14px 14px;text-align:center;font-size:17px;min-width:128px;}
+  .step .n{display:inline-block;background:var(--primary);color:#fff;border-radius:50%;width:26px;height:26px;line-height:26px;font-size:15px;margin-bottom:6px;}
+  pre{border-radius:14px;box-shadow:0 10px 30px rgba(18,32,54,.18);font-size:17px;line-height:1.65;max-height:62vh;overflow:auto;}
+  pre code.hljs{padding:22px 26px;background:var(--code-bg);}
+  .hl-note{margin-top:14px;font-size:17px;color:var(--muted);}
+  .hl-note b{color:var(--red);}
+  .terminal{background:#0d141e;border-radius:14px;padding:30px 34px;font-family:Consolas,Menlo,monospace;font-size:22px;line-height:2.1;color:#d8e6ff;box-shadow:0 12px 34px rgba(13,20,30,.35);}
+  .terminal .cm{color:#7fd0ff;}.terminal .ok{color:#76e3a8;}
+  ul.clean{list-style:none;font-size:21px;line-height:2.2;}
+  ul.clean li::before{content:"▸ ";color:var(--primary);font-weight:700;}
+  .cover{background:linear-gradient(135deg,#122036 0%,#1f5fbf 100%);color:#fff;align-items:center;text-align:center;}
+  .cover h1{color:#fff;font-size:64px;}
+  .cover .lead{color:#cfe0fb;}
+  .cover .ver{display:inline-block;margin-top:26px;border:1.5px solid rgba(255,255,255,.55);border-radius:999px;padding:8px 28px;font-size:22px;letter-spacing:3px;}
+  .end h1{font-size:54px;}
+  .hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);font-size:13px;color:#a6b3c5;z-index:9;}
+  @media print{.slide{display:flex;page-break-after:always;height:100vh;}.hint{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- 1 片头 -->
+<section class="slide cover active">
+  <h1>企业级多模态数据中台 MVP</h1>
+  <p class="lead">数据治理 → 资产沉淀 → 产品生成 → 合规挂牌 全链路演示</p>
+  <div class="ver">V 0.1</div>
+  <div class="chips" style="justify-content:center;">
+    <span class="chip" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;">IAM</span>
+    <span class="chip" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;">PROC</span>
+    <span class="chip" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;">GOV</span>
+    <span class="chip" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;">DS</span>
+    <span class="chip" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;">PROD</span>
+    <span class="chip" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff;">SCR</span>
+  </div>
+  <div class="tag" style="color:#9fc0f5;">镜 1 ｜ 00:00–00:40</div>
+</section>
+
+<!-- 2 痛点 -->
+<section class="slide">
+  <div class="tag">第一章 项目背景 ｜ <b>镜 2</b> ｜ 00:40–01:18</div>
+  <h2><span class="num">01</span>数据散、质量差、不敢用</h2>
+  <div class="grid g3">
+    <div class="card"><h3>📄 格式分散</h3><p>GPS 轨迹是 CSV、司机日志是 TXT、现场资料是图片和视频，散落在各部门</p></div>
+    <div class="card"><h3>🧹 质量参差</h3><p>缺失、重复、漂移点、时间乱序；GBK 编码、中文乱序列名，无法直接分析</p></div>
+    <div class="card"><h3>🔒 敏感混杂</h3><p>手机号、身份证、银行卡、带 GPS 的照片 EXIF——不敢直接用，更不能交易</p></div>
+  </div>
+  <p class="lead" style="margin-top:30px;">结果：数据躺在硬盘里，<b>变不成可交易的数据产品</b>。</p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">2</div>
+</section>
+
+<!-- 3 三问 -->
+<section class="slide">
+  <div class="tag">第一章 项目背景 ｜ <b>镜 3</b> ｜ 01:18–01:56</div>
+  <h2><span class="num">01</span>本项目回答三个问题</h2>
+  <div class="grid g3">
+    <div class="card" style="border-top:4px solid var(--primary);"><h3>① 治理干净</h3><p>多模态数据如何自动完成清洗、标准化、脱敏？</p></div>
+    <div class="card" style="border-top:4px solid var(--green);"><h3>② 沉淀资产</h3><p>成品如何自动入资产目录、组装成带质量报告的数据集版本？</p></div>
+    <div class="card" style="border-top:4px solid var(--amber);"><h3>③ 合规产品</h3><p>数据集如何通过合规检验，加工成可登记挂牌的数据产品？</p></div>
+  </div>
+  <div class="brand">mydatama V0.1</div><div class="pageno">3</div>
+</section>
+
+<!-- 4 定位 -->
+<section class="slide">
+  <div class="tag">第一章 项目背景 ｜ <b>镜 4</b> ｜ 01:56–02:40</div>
+  <h2><span class="num">01</span>V0.1 定位：一台办公电脑演全链路</h2>
+  <div class="grid g4" style="margin-top:8px;">
+    <div class="card"><div class="big">8GB</div><p>普通办公电脑即可</p></div>
+    <div class="card"><div class="big">4 容器</div><p>Docker Compose 一键启动</p></div>
+    <div class="card"><div class="big">15 步</div><p>标准演示动线</p></div>
+    <div class="card"><div class="big">≈20 分钟</div><p>走完全部流程</p></div>
+  </div>
+  <p class="lead" style="margin-top:34px;">不追求生产级规模，但<b>模块边界与真实企业应用一致</b>，可平滑演进到微服务与对象存储。</p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">4</div>
+</section>
+
+<!-- 5 六模块全景 -->
+<section class="slide">
+  <div class="tag">第二章 核心功能 ｜ <b>镜 5</b> ｜ 02:40–02:58</div>
+  <h2><span class="num">02</span>六模块对应数据流转六环节</h2>
+  <div class="flow" style="margin-top:20px;">
+    <div class="step"><b>IAM</b><br><span class="s">认证权限</span></div><span class="arrow">→</span>
+    <div class="step"><b>PROC</b><br><span class="s">五阶段处理</span></div><span class="arrow">→</span>
+    <div class="step"><b>GOV</b><br><span class="s">资产血缘</span></div><span class="arrow">→</span>
+    <div class="step"><b>DS</b><br><span class="s">数据集版本</span></div><span class="arrow">→</span>
+    <div class="step"><b>PROD</b><br><span class="s">产品加工挂牌</span></div>
+  </div>
+  <div style="text-align:center;margin-top:34px;font-size:24px;"><span class="pill p-blue">SCR</span> 大屏全程联动，呈现全局指标</div>
+  <div class="brand">mydatama V0.1</div><div class="pageno">5</div>
+</section>
+
+<!-- 6 IAM -->
+<section class="slide">
+  <div class="tag">第二章 核心功能 ｜ <b>镜 6</b> ｜ 02:58–03:27</div>
+  <h2><span class="num">02</span>IAM：JWT + RBAC + ABAC + 审计</h2>
+  <div class="grid g2">
+    <div class="card"><h3>🔑 认证与功能权限</h3><p>JWT 无状态登录；34 个权限点 + 角色策略；viewer 访问用户管理 → <b style="color:var(--red)">403 拦截</b></p></div>
+    <div class="card"><h3>🛡️ 数据级权限</h3><p>按密级（1 公开 ~ 4 机密）与部门判定，无权资产在查询阶段即被过滤</p></div>
+    <div class="card" style="grid-column:1/3;"><h3>📋 审计闭环</h3><p>所有 /api 请求自动落审计：谁、在什么时间、从哪个 IP、做了什么——满足等保可追溯要求</p></div>
+  </div>
+  <div class="brand">mydatama V0.1</div><div class="pageno">6</div>
+</section>
+
+<!-- 7 五阶段 -->
+<section class="slide">
+  <div class="tag">第二章 核心功能 ｜ <b>镜 7</b> ｜ 03:27–04:09</div>
+  <h2><span class="num">02</span>PROC：五阶段治理流水线</h2>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><br>接收校验</div><span class="arrow">→</span>
+    <div class="step"><span class="n">2</span><br>清洗</div><span class="arrow">→</span>
+    <div class="step"><span class="n">3</span><br>标准化</div><span class="arrow">→</span>
+    <div class="step"><span class="n">4</span><br>脱敏</div><span class="arrow">→</span>
+    <div class="step"><span class="n">5</span><br>登记</div>
+  </div>
+  <div class="grid g4" style="margin-top:36px;">
+    <div class="card"><h3>缺失 ≈ 2%</h3><p>1000 行（空值检测）</p></div>
+    <div class="card"><h3>重复 1%</h3><p>500 行完全重复</p></div>
+    <div class="card"><h3>漂移 50 条</h3><p>坐标跳变入隔离</p></div>
+    <div class="card"><h3>乱序 20 条</h3><p>时间归一排序</p></div>
+  </div>
+  <p class="lead" style="margin-top:22px;">5 万行 GPS 全链路处理 <b>&lt; 60 秒</b>，敏感列自动掩码。</p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">7</div>
+</section>
+
+<!-- 8 多模态 -->
+<section class="slide">
+  <div class="tag">第二章 核心功能 ｜ <b>镜 8</b> ｜ 04:09–04:33</div>
+  <h2><span class="num">02</span>多模态：文本 / 图片 / 视频同样治理</h2>
+  <div class="grid g3">
+    <div class="card"><h3>📝 TEXT</h3><p>手机号 / 邮箱 / 身份证正则识别并掩码，统计命中条数</p></div>
+    <div class="card"><h3>🖼️ IMAGE</h3><p>剥离 EXIF（含 GPS 定位），生成缩略图，保留图像本体</p></div>
+    <div class="card"><h3>🎬 VIDEO</h3><p>ffmpeg 抽帧缩略图、读取码率分辨率、清除元数据、mp4 转码</p></div>
+  </div>
+  <div class="brand">mydatama V0.1</div><div class="pageno">8</div>
+</section>
+
+<!-- 9 GOV -->
+<section class="slide">
+  <div class="tag">第二章 核心功能 ｜ <b>镜 9</b> ｜ 04:33–05:01</div>
+  <h2><span class="num">02</span>GOV：自动盘点、血缘、热力图</h2>
+  <div class="grid g3">
+    <div class="card"><h3>资产目录</h3><p>处理完成自动登记：字段、密级、质量分、存储位置；多维检索 + ABAC 过滤</p></div>
+    <div class="card"><h3>血缘图</h3><p>raw → processed → dataset → product 自动边，力导图可缩放，影响分析</p></div>
+    <div class="card"><h3>热力图</h3><p>业务域 × 日期的资产使用热度，开放 API 调用量自动反哺</p></div>
+  </div>
+  <div class="brand">mydatama V0.1</div><div class="pageno">9</div>
+</section>
+
+<!-- 10 DS -->
+<section class="slide">
+  <div class="tag">第二章 核心功能 ｜ <b>镜 10</b> ｜ 05:01–05:32</div>
+  <h2><span class="num">02</span>DS：不可变版本 + 三维质检</h2>
+  <div class="grid g3">
+    <div class="card"><h3>完整性</h3><p>completeness：缺失与空值比例</p></div>
+    <div class="card"><h3>一致性</h3><p>consistency：格式与标准化符合度</p></div>
+    <div class="card"><h3>准确性</h3><p>accuracy：漂移/异常值比例</p></div>
+  </div>
+  <p class="lead" style="margin-top:28px;">快照不可变；<b>overall_score ≥ 0.85</b> 才能进入产品环节；v1 / v2 支持增删与指标差异对比。</p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">10</div>
+</section>
+
+<!-- 11 PROD+SCR -->
+<section class="slide">
+  <div class="tag">第二章 核心功能 ｜ <b>镜 11</b> ｜ 05:32–05:50</div>
+  <h2><span class="num">02</span>PROD：本期核心 + SCR 联动</h2>
+  <div class="grid g3">
+    <div class="card"><h3>📦 数据包</h3><p>zip：成品数据 + README + 质量报告 + PDF 说明书（SHA-256）</p></div>
+    <div class="card"><h3>🔌 API 服务</h3><p>开放只读端点 + 计量 Key（明文仅返回一次）</p></div>
+    <div class="card"><h3>📊 分析报告</h3><p>质量与资产指标渲染 HTML → PDF</p></div>
+  </div>
+  <p class="lead" style="margin-top:26px;">内置状态机 + <b>四道合规规则</b>；挂牌结果实时跳动在 SCR 大屏产品板块。</p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">11</div>
+</section>
+
+<!-- 12 四容器 -->
+<section class="slide">
+  <div class="tag">第三章 技术架构 ｜ <b>镜 12</b> ｜ 05:50–06:23</div>
+  <h2><span class="num">03</span>四容器编排，唯一入口 8090</h2>
+  <div class="arch">
+    <div class="box fill"><div class="t">portal-nginx</div><div class="s">:8090 静态门户 + API 分发</div></div>
+  </div>
+  <div class="arch" style="margin-top:18px;">
+    <div class="box"><div class="t">processing-app</div><div class="s">FastAPI :8000 · 2 worker · ffmpeg</div></div>
+    <div class="box"><div class="t">platform-app</div><div class="s">Spring Boot :8080 六模块单体</div></div>
+  </div>
+  <div class="arch" style="margin-top:18px;">
+    <div class="box gray"><div class="t">PostgreSQL 16 + PostGIS</div><div class="s">iam / proc / gov / ds / prod</div></div>
+    <div class="box gray"><div class="t">共享卷 /data</div><div class="s">raw · processed · thumb · products</div></div>
+  </div>
+  <div class="brand">mydatama V0.1</div><div class="pageno">12</div>
+</section>
+
+<!-- 13 Java 分层 -->
+<section class="slide">
+  <div class="tag">第三章 技术架构 ｜ <b>镜 13</b> ｜ 06:23–07:04</div>
+  <h2><span class="num">03</span>Java：Maven 多模块，跨模块只走 api 包</h2>
+  <div class="layers">
+    <div class="layer"><b>platform-boot</b><span>启动入口 · 大屏聚合 · 开放 API · 健康检查</span></div>
+    <div class="layer"><b>module-product</b><span>产品 / 生成引擎 / 合规引擎 / 说明书 PDF</span></div>
+    <div class="layer"><b>module-dataset</b><span>数据集 / 版本快照 / 三维质检</span></div>
+    <div class="layer"><b>module-governance</b><span>资产 / 字段元数据 / 血缘 / 热力图 / 内部登记</span></div>
+    <div class="layer"><b>module-iam</b><span>用户角色 / API Key / ABAC / 审计</span></div>
+    <div class="layer" style="border-color:var(--primary);"><b>platform-common</b><span>Result · JWT · @RequirePerm 切面 · AuditFilter · BaseEntity</span></div>
+  </div>
+  <div class="brand">mydatama V0.1</div><div class="pageno">13</div>
+</section>
+
+<!-- 14 五 schema -->
+<section class="slide">
+  <div class="tag">第三章 技术架构 ｜ <b>镜 14</b> ｜ 07:04–07:33</div>
+  <h2><span class="num">03</span>一个库 · 五个 schema · 七个初始化 SQL</h2>
+  <div class="grid" style="grid-template-columns:repeat(5,1fr);margin-top:8px;">
+    <div class="box fill"><div class="t">iam</div><div class="s">用户/角色/权限/Key/审计</div></div>
+    <div class="box fill"><div class="t">proc</div><div class="s">文件/队列/处理结果</div></div>
+    <div class="box fill"><div class="t">gov</div><div class="s">资产/字段/血缘/标准</div></div>
+    <div class="box fill"><div class="t">ds</div><div class="s">数据集/版本/快照项</div></div>
+    <div class="box fill"><div class="t">prod</div><div class="s">产品/产物/合规记录</div></div>
+  </div>
+  <ul class="clean" style="margin-top:38px;">
+    <li>统一软删除 deleted + 审计字段（MetaObjectHandler 自动填充）</li>
+    <li>快照 / 质检报告 / 扩展属性 → jsonb（连接串带 stringtype=unspecified）</li>
+    <li>01~07 SQL 按序建表：扩展 → 五 schema → 种子（账号/34 权限点/3 模板）</li>
+  </ul>
+  <div class="brand">mydatama V0.1</div><div class="pageno">14</div>
+</section>
+
+<!-- 15 安全三道关 -->
+<section class="slide">
+  <div class="tag">第三章 技术架构 ｜ <b>镜 15</b> ｜ 07:33–08:09</div>
+  <h2><span class="num">03</span>安全链路：三道关 + 内部令牌</h2>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><br>JwtAuthenticationFilter<br><span class="s">解析令牌/还原上下文</span></div><span class="arrow">→</span>
+    <div class="step"><span class="n">2</span><br>RbacAspect<br><span class="s">权限点注解校验</span></div><span class="arrow">→</span>
+    <div class="step"><span class="n">3</span><br>AbacEngine<br><span class="s">密级/部门比对</span></div>
+  </div>
+  <p class="lead" style="margin-top:32px;">跨服务回调（资产登记等）走 <b>X-Service-Token</b>，由 ServiceTokenFilter 校验，<b>/internal/** 不对门户暴露</b>。</p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">15</div>
+</section>
+
+<!-- 16 审计+队列 -->
+<section class="slide">
+  <div class="tag">第三章 技术架构 ｜ <b>镜 16</b> ｜ 08:09–08:42</div>
+  <h2><span class="num">03</span>零侵入审计 + PG 队列可靠执行</h2>
+  <div class="grid g2">
+    <div class="card"><h3>AuditFilter</h3><p>Filter 自动覆盖 /api/** → 异步线程池落库，含路径、动作、IP、结果；业务代码零注解</p></div>
+    <div class="card"><h3>job_queue + worker ×2</h3><p>轮询抢占 + 行锁防重复领取；锁超时 10 分钟自动释放，重启后 RUNNING 任务续跑——任务不丢</p></div>
+  </div>
+  <div class="brand">mydatama V0.1</div><div class="pageno">16</div>
+</section>
+
+<!-- 17 数据流 -->
+<section class="slide">
+  <div class="tag">第三章 技术架构 ｜ <b>镜 17</b> ｜ 08:42–09:20</div>
+  <h2><span class="num">03</span>端到端数据流</h2>
+  <div class="flow">
+    <div class="step">原始文件</div><span class="arrow">→</span>
+    <div class="step">五阶段治理</div><span class="arrow">→</span>
+    <div class="step">gov 资产<br>+血缘</div><span class="arrow">→</span>
+    <div class="step">ds 版本快照<br>+质量报告</div><span class="arrow">→</span>
+    <div class="step">prod 生成<br>+合规</div><span class="arrow">→</span>
+    <div class="step" style="border-color:var(--green);">登记挂牌</div>
+  </div>
+  <p class="lead" style="margin-top:34px;text-align:center;">Vue3 + Vite + Element Plus + Pinia + ECharts，大屏 10 秒轮询；<b>全过程状态在大屏与审计中可见</b>。</p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">17</div>
+</section>
+
+<!-- 18 统一响应 -->
+<section class="slide">
+  <div class="tag">第四章 关键代码 ｜ <b>镜 18</b> ｜ 09:20–09:48</div>
+  <h2><span class="num">04</span>公共约定：统一响应 + 六位错误码</h2>
+  <pre><code class="language-java">// 所有接口同一外壳：HTTP 恒 200，code=0 成功
+public class Result&lt;T&gt; {
+    private int code;        // 0=成功；6 位错误码 MMMNNN
+    private String message;
+    private T data;
+}
+// 错误码段位：000 公共 / 100 IAM / 300 GOV / 400 DS / 600 PROD / 700 TRAJ
+// 例：600003 产品状态非法；GlobalExceptionHandler 统一翻译 BizException</code></pre>
+  <div class="brand">mydatama V0.1</div><div class="pageno">18</div>
+</section>
+
+<!-- 19 RbacAspect -->
+<section class="slide">
+  <div class="tag">第四章 关键代码 ｜ <b>镜 19</b> ｜ 09:48–10:32</div>
+  <h2><span class="num">04</span>RBAC：一个注解守住接口</h2>
+  <pre><code class="language-java">@Aspect
+@Component
+public class RbacAspect {
+    @Before("@annotation(p)")
+    public void check(JoinPoint jp, RequirePerm p) {
+        UserInfo user = UserContext.get();
+        if (user == null) throw new BizException(ErrorCode.UNAUTHORIZED);
+        if (user.getRoles() != null && user.getRoles().contains("admin")) return; // 管理员直通
+        Set&lt;String&gt; own = user.getPermissions() == null ? Set.of()
+                : new HashSet&lt;&gt;(user.getPermissions());
+        for (String need : p.value()) {
+            if (!own.contains(need)) throw new BizException(ErrorCode.PERM_DENIED);
+        }
+    }
+}
+// Controller 用法：@RequirePerm("prod:product:export")</code></pre>
+  <div class="brand">mydatama V0.1</div><div class="pageno">19</div>
+</section>
+
+<!-- 20 ABAC -->
+<section class="slide">
+  <div class="tag">第四章 关键代码 ｜ <b>镜 20</b> ｜ 10:32–10:58</div>
+  <h2><span class="num">04</span>ABAC：功能能进，数据未必能看</h2>
+  <pre><code class="language-java">// subject：当前用户密级/部门/角色；resourceAttrs：资产密级/归属部门
+iamApi.checkAccess("asset", "read",
+        new Subject(secretLevel, deptCode, roles),
+        Map.of("secret_level", asset.getSecretLevel(),
+               "owner_dept",  asset.getOwnerDept()));
+// 资产列表在 SQL 组装阶段即按判定结果过滤，而不是查出后再丢弃</code></pre>
+  <div class="brand">mydatama V0.1</div><div class="pageno">20</div>
+</section>
+
+<!-- 21 ComplianceEngine -->
+<section class="slide">
+  <div class="tag">第四章 关键代码 ｜ <b>镜 21</b> ｜ 10:58–12:03（本章重点）</div>
+  <h2><span class="num">04</span>ComplianceEngine：合规四规则（真实代码节选）</h2>
+  <pre><code class="language-java">String batchNo = "BC" + CodecUtil.today() + CodecUtil.randomHex(4).toUpperCase();
+List&lt;RuleResult&gt; results = new ArrayList&lt;&gt;();
+results.add(ruleSecretLevel(product, snapshots));       // R1 原料最大密级 ≤ 产品密级
+results.add(ruleSensitiveMasked(snapshots, items));     // R2 敏感列必须有 maskStrategy
+results.add(ruleQualityThreshold(qualityReport, cfg));  // R3 overall_score ≥ 0.85
+results.add(ruleManualComplete(manualMeta));            // R4 说明书四要素非空
+for (RuleResult r : results) { complianceCheckMapper.insert(toCheck(r, batchNo)); }
+product.setStatus(results.stream().allMatch(r -> r.passed) ? "PASSED" : "BLOCKED");</code></pre>
+  <p class="hl-note">每条结果携带人可读 detail，例如 <b>"原料最大密级 3 高于产品密级 1"</b>——反面演示以密级倒挂稳定触发 <b>R1 亮红</b>，产品被 BLOCKED。</p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">21</div>
+</section>
+
+<!-- 22 ProductService -->
+<section class="slide">
+  <div class="tag">第四章 关键代码 ｜ <b>镜 22</b> ｜ 12:03–12:35</div>
+  <h2><span class="num">04</span>状态机：非法跳转直接拒绝</h2>
+  <pre><code class="language-java">public void configure(Long id) {
+    Product product = mustGet(id);
+    assertStatus(product, "DRAFT");          // 只能从草稿提交配置
+    if (product.getSecretLevel() &lt; maxSnapshotSecretLevel(items))
+        throw new BizException(600008, "产品密级不能低于原料密级");
+    product.setStatus("CONFIGURED");
+}
+public Product register(Long id) {
+    Product product = mustGet(id);
+    if (!"PASSED".equals(product.getStatus()))
+        throw new BizException(ErrorCode.REGISTER_NOT_ALLOWED);
+    product.setRegNo("REG-" + CodecUtil.today() + "-" + CodecUtil.randomDigits(6));
+    product.setStatus("REGISTERED");
+}</code></pre>
+  <div class="brand">mydatama V0.1</div><div class="pageno">22</div>
+</section>
+
+<!-- 23 worker -->
+<section class="slide">
+  <div class="tag">第四章 关键代码 ｜ <b>镜 23</b> ｜ 12:35–13:20</div>
+  <h2><span class="num">04</span>Python worker：顺序阶段 + 失败重入 + 幂等回调</h2>
+  <pre><code class="language-python"># pipeline/__init__.py
+STAGES = ["COLLECT_VALIDATE", "CLEAN", "STANDARDIZE", "MASK", "ANNOTATE_REGISTER"]
+
+# worker.py：从断点阶段继续；每阶段指标写 meta；失败按 retry_count 重入队
+for stage in STAGES[start:]:
+    db.execute("UPDATE proc.job_queue SET stage=%s WHERE id=%s", (stage, job_id))
+    metrics[stage] = dispatch_stage(file_modality, stage, ctx)
+
+# callbacks.py：带 X-Service-Token 回调 Java，按 source_file_id 幂等登记
+#   gov.assets + metadata_tables/columns + lineage_edges</code></pre>
+  <div class="brand">mydatama V0.1</div><div class="pageno">23</div>
+</section>
+
+<!-- 24-30 实机录屏占位提示卡（录屏前可用作转场） -->
+<section class="slide">
+  <div class="tag">第五章 功能演示 ｜ <b>镜 24–30</b> ｜ 13:20–16:50</div>
+  <h2><span class="num">05</span>实机演示（浏览器录屏）</h2>
+  <ul class="clean">
+    <li>登录 / 403 / 大屏空态</li>
+    <li>0901 五阶段 → 质检 → 修复闭环</li>
+    <li>txt / 图片 / 视频多模态</li>
+    <li>资产目录 → 血缘 → 热力图</li>
+    <li>数据集 v1 → 0902(GBK) → v2 对比</li>
+    <li>产品配置 / 生成 / 合规四绿 → 密级倒挂 R1 亮红被拦</li>
+    <li>登记 REG 凭证号 → 挂牌 → 大屏跳动 → 审计回放</li>
+  </ul>
+  <p class="lead" style="margin-top:24px;">逐镜点击步骤见 <b>03-录制操作清单.md</b></p>
+  <div class="brand">mydatama V0.1</div><div class="pageno">24</div>
+</section>
+
+<!-- 31 部署 -->
+<section class="slide">
+  <div class="tag">第六章 使用说明 ｜ <b>镜 31</b> ｜ 16:50–17:25</div>
+  <h2><span class="num">06</span>三条命令跑起来</h2>
+  <div class="terminal">
+    <div><span class="cm">$</span> cp .env.example .env</div>
+    <div><span class="cm">$</span> docker compose up -d --build</div>
+    <div><span class="cm">$</span> docker compose ps&nbsp;&nbsp;<span class="ok"># 4 容器 healthy</span></div>
+    <div style="margin-top:14px;color:#9fc0f5;">▶ 浏览器 http://localhost:8090</div>
+  </div>
+  <ul class="clean" style="margin-top:24px;font-size:19px;">
+    <li>账号 admin / Admin@123（另 operator、viewer）；脚本 bash scripts/smoke-test.sh</li>
+    <li>恢复出厂：docker compose down -v；详细手册：《部署文档与演示指南 V0.1》</li>
+  </ul>
+  <div class="brand">mydatama V0.1</div><div class="pageno">25</div>
+</section>
+
+<!-- 32 总结 -->
+<section class="slide end" style="text-align:center;align-items:center;">
+  <div class="tag" style="left:50%;transform:translateX(-50%);">第六章 ｜ <b>镜 32</b> ｜ 17:25–18:00</div>
+  <h1>从文件到产品，一条链路全程合规</h1>
+  <div class="chips" style="justify-content:center;">
+    <span class="chip">五阶段治理</span><span class="chip">三维质检</span>
+    <span class="chip">合规四规则</span><span class="chip">全程审计</span>
+  </div>
+  <p class="lead" style="margin-top:40px;">github.com/litaofox/mydatama　·　标签 <b>v0.1.0</b></p>
+  <p class="lead" style="margin-top:10px;">感谢观看，我们下个版本见 👋</p>
+  <div class="pageno">26</div>
+</section>
+
+<div class="hint">← → / 空格 翻页 ｜ F11 全屏录制 ｜ 共 26 页（对应分镜 1–23、24–30 转场、31–32）</div>
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let idx = 0;
+  function show(i){
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, n) => s.classList.toggle('active', n === idx));
+    if (location.hash !== '#' + (idx + 1)) history.replaceState(null, '', '#' + (idx + 1));
+  }
+  function fromHash(){ const n = parseInt((location.hash || '#1').slice(1), 10); if (n >= 1) show(n - 1); }
+  window.addEventListener('hashchange', fromHash);
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); show(idx + 1); }
+    if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); show(idx - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('a')) show(idx + 1); });
+  if (window.hljs) hljs.highlightAll();
+  fromHash();
+</script>
+</body>
+</html>

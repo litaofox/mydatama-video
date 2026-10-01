@@ -108,6 +108,19 @@ class PlatformClient:
         })
         return data["id"]
 
+    def find_dataset_id(self, name: str) -> int | None:
+        """按名查已有数据集（重跑复用，避免唯一键冲突）。"""
+        data = self._request("GET", "/api/dataset/datasets",
+                             params={"keyword": name, "page": 1, "size": 50})
+        for item in data.get("list", []):
+            if item.get("name") == name:
+                return item["id"]
+        return None
+
+    def ensure_dataset(self, name: str, scenario: str, filter_cond: dict,
+                       description: str = "") -> int:
+        return self.find_dataset_id(name) or self.create_dataset(name, scenario, filter_cond, description)
+
     def create_version(self, dataset_id: int, change_note: str) -> dict[str, Any]:
         return self._request("POST", f"/api/dataset/datasets/{dataset_id}/versions",
                              json={"changeNote": change_note})

@@ -51,6 +51,14 @@ LIVE_TIMEOUT = int(os.environ.get("LIVE_TIMEOUT", "300"))
 POLL_INTERVAL = float(os.environ.get("POLL_INTERVAL", "3"))
 HEADLESS = os.environ.get("HEADLESS", "true").lower() not in ("0", "false", "no")
 
+# ---- 演示造数（默认关闭）----
+# 平台 configure 阶段会硬性拦阻密级倒挂（错误码 600008），因此走公开 HTTP 无法让产品带着
+# 倒挂密级进入 GENERATED。为在视频中如实复现合规引擎 R1 红屏，可显式提供演示库 DSN，
+# 生成器会在反面产品 GENERATED 后直接把其密级 UPDATE 为 1 再触发合规校验。
+# 仅限一次性演示库，切勿指向生产。例如：
+# DEMO_TWEAK_DSN=host=postgres port=5432 dbname=mydatama user=mydatama password=***
+DEMO_TWEAK_DSN = os.environ.get("DEMO_TWEAK_DSN", "").strip()
+
 # 兼容矩阵：本生成器验证过的平台版本
 COMPAT_PLATFORM = "v0.1.0"
 

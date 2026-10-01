@@ -1,4 +1,6 @@
 # 运行时依赖（Python 3.11+）
 requests>=2.32,<3
-edge-tts>=6.1,<7
+edge-tts>=7.2,<8
 playwright>=1.47,<2
+# 仅在显式配置 DEMO_TWEAK_DSN（演示造数）时使用
+psycopg2-binary>=2.9,<3

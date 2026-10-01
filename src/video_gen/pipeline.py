@@ -44,6 +44,7 @@ def run(*, live: bool = True, burn: bool = True, dry_run: bool = False) -> Path:
 
     auth_state = None
     live_routes: dict[int, str] = {}
+    pre_images: dict[int, Path] = {}
     if live:
         print("[live] 连接平台并执行 15 步自动化动线（约 3~5 分钟）...")
         from . import scenario  # 延迟导入：仅实机模式需要 requests
@@ -53,11 +54,21 @@ def run(*, live: bool = True, burn: bool = True, dry_run: bool = False) -> Path:
         client.wait_healthy()
         client.login(config.ADMIN_USERNAME, config.ADMIN_PASSWORD)
         auth_state = client.auth_state()
+        # 镜 24 旁白为"出厂空态大屏"：必须在造数动线之前截图
+        if 24 in live_targets:
+            try:
+                browser.capture_route("/screen", auth_state, live_targets[24])
+                pre_images[24] = live_targets[24]
+                live_targets.pop(24)
+                print("[live] 镜 24 空态大屏已提前截取")
+            except Exception as exc:
+                print(f"[browser] 镜 24 空态截图失败，改为动线后补拍: {exc}")
         live_routes = scenario.run(client, scratch=img_dir / "scratch")
     else:
         print("[live] --slides-only：跳过实机演示，第五章使用转场卡。")
 
     images = browser.capture(slide_targets, live_targets, live_routes, auth_state)
+    images.update(pre_images)
     for shot in shots:
         if shot.no not in images:
             print(f"[render] 镜 {shot.no} 无实机截图，使用第五章转场卡兜底")

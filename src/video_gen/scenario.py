@@ -50,7 +50,7 @@ def run(client: PlatformClient, scratch: Path) -> dict[int, str]:
 
     # ---- 步骤 8：数据集 v1 ----
     print("[scenario] ④ 创建驾驶行为样本集 v1...")
-    ds1 = client.create_dataset(
+    ds1 = client.ensure_dataset(
         "驾驶行为样本集", "驾驶行为分析",
         {"modality": "STRUCTURED", "bizDomain": "TRANSPORT", "secretLevelMax": 4},
         "五阶段治理后的北斗货运驾驶行为数据")
@@ -68,7 +68,8 @@ def run(client: PlatformClient, scratch: Path) -> dict[int, str]:
     # ---- 步骤 10~12：正面产品（四绿→登记→挂牌）----
     print("[scenario] ⑥ 正面数据包产品：配置→生成→合规...")
     code = f"PRD-{time.strftime('%Y%m%d')}-{int(time.time()) % 1000000:06d}"
-    pos = _create_package_product(client, v2["id"], code, secret_level=2)
+    pos = _create_package_product(client, v2["versionId"], code,
+                                  secret_level=2, name="货运驾驶行为精算样本集")
     client.product_action(pos, "configure")
     client.product_action(pos, "generate")
     comp = client.product_action(pos, "compliance/run")
@@ -79,17 +80,25 @@ def run(client: PlatformClient, scratch: Path) -> dict[int, str]:
         client.product_action(pos, "listing")
 
     # ---- 步骤 13：反面产品（密级倒挂 → R1 必红 → BLOCKED）----
-    print("[scenario] ⑦ 反面产品：上传明文样例（密级 3）+ 产品密级倒挂...")
+    print("[scenario] ⑦ 反面产品：上传明文样例（密级 3）...")
     neg_asset = client.upload_file(fdir / "unmasked_sample.csv", "RISK", 3)
     client.wait_ready(neg_asset, config.LIVE_TIMEOUT)
-    ds2 = client.create_dataset(
+    ds2 = client.ensure_dataset(
         "风险明文样例集", "合规反面演示",
         {"bizDomain": "RISK", "secretLevelMax": 4},
         "用于演示密级倒挂被合规引擎拦阻")
     nv = client.create_version(ds2, "明文样例版本")
-    neg = _create_package_product(client, nv["id"], code + "-X", secret_level=1)
+    # 先以合规密级 3 走完 configure/generate（平台在 configure 硬性拦阻倒挂），
+    # 再由演示造数开关把密级降为 1，合规引擎才能如实跑出 R1 红屏
+    neg = _create_package_product(client, nv["versionId"], code + "-X",
+                                  secret_level=3, name="明文风险样例产品-合规演示")
     client.product_action(neg, "configure")
     client.product_action(neg, "generate")
+    if config.DEMO_TWEAK_DSN:
+        _demo_lower_secret_level(neg, 1)
+    else:
+        print("[scenario]   未配置 DEMO_TWEAK_DSN：反面产品保持密级 3（R1 将为绿，"
+              "红屏画面需开启演示造数，见 README）")
     neg_comp = client.product_action(neg, "compliance/run")
     print(f"[scenario]   反面产品合规: {neg_comp.get('status')}（预期 BLOCKED）")
     routes[29] = f"/product/{neg}"
@@ -99,12 +108,29 @@ def run(client: PlatformClient, scratch: Path) -> dict[int, str]:
     return routes
 
 
+def _demo_lower_secret_level(product_id: int, level: int) -> None:
+    """【仅演示库】直连数据库把指定产品密级改低，用于复现合规 R1 红屏。
+
+    平台 configure 接口会硬性拒绝倒挂（600008），所以红屏只能在生成后造数。
+    需要显式配置 DEMO_TWEAK_DSN；连接失败直接抛错（不静默跳过）。
+    """
+    import psycopg2
+
+    with psycopg2.connect(config.DEMO_TWEAK_DSN) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE prod.products SET secret_level=%s, updated_at=now() WHERE id=%s",
+                        (level, product_id))
+            if cur.rowcount != 1:
+                raise RuntimeError(f"演示造数失败：未找到产品 {product_id}")
+    print(f"[scenario]   [演示造数] 产品 {product_id} 密级已置为 {level}（仅演示库）")
+
+
 def _create_package_product(client: PlatformClient, version_id: int, code: str,
-                            secret_level: int) -> int:
+                            secret_level: int, name: str) -> int:
     template_id = client.template_id_by_code("tpl-data-package-v1")
     return client.create_product({
         "templateId": template_id,
-        "name": "货运驾驶行为精算样本集" if secret_level >= 2 else "明文风险样例产品",
+        "name": name,
         "code": code,
         "datasetVersionId": version_id,
         "secretLevel": secret_level,

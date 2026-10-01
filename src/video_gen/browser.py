@@ -11,6 +11,38 @@ from . import config
 # playwright 在 capture() 内延迟导入：--dry-run 与 --slides-only 的环境校验无需安装浏览器。
 
 
+def capture_route(route: str, auth_state: dict | None, out_path: Path) -> Path:
+    """单页截图（动线前置镜头，如镜 24 的出厂空态大屏）。失败抛异常由调用方兜底。"""
+    from playwright.sync_api import sync_playwright  # 延迟导入
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=config.HEADLESS, args=[
+            "--force-device-scale-factor=1",
+            "--hide-scrollbars",
+        ])
+        context = browser.new_context(
+            viewport={"width": config.WIDTH, "height": config.HEIGHT},
+            device_scale_factor=1,
+        )
+        if auth_state:
+            context.add_init_script(
+                f"localStorage.setItem('mydatama_auth', {json.dumps(json.dumps(auth_state, ensure_ascii=False))});"
+            )
+        page = context.new_page()
+        try:
+            page.goto(f"{config.BASE_URL}{route}", wait_until="domcontentloaded")
+            try:
+                page.wait_for_load_state("networkidle", timeout=8000)
+            except Exception:
+                pass
+            page.wait_for_timeout(1800)
+            page.screenshot(path=str(out_path))
+        finally:
+            page.close()
+            browser.close()
+    return out_path
+
+
 def capture(slide_targets: dict[int, tuple[int, Path]], live_targets: dict[int, Path],
             live_routes: dict[int, str], auth_state: dict | None) -> dict[int, Path]:
     """slide_targets: {分镜号: (幻灯片页码, 输出路径)}；live_targets: {分镜号: 输出路径}。

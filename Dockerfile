@@ -19,10 +19,14 @@ RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors
 
 WORKDIR /app
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt \
+# 主依赖 + Chromium 单独成层（体积大、变动少，避免 requirements 微调触发浏览器重下）
+RUN pip install --no-cache-dir "requests>=2.32,<3" "edge-tts>=7.2,<8" "playwright>=1.47,<2" \
     && PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright \
        python -m playwright install chromium
+
+# 版本锁定与其余轻量依赖（如演示造数用的 psycopg2-binary）
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # 代码与素材
 COPY src /app/src
